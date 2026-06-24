@@ -1,5 +1,10 @@
+// Dart imports:
+import 'dart:async';
+import 'dart:convert';
+
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_ce/hive.dart';
 
 // Project imports:
 import '../../../search/selected_tags/types.dart';
@@ -7,6 +12,8 @@ import '../types/booru_tab.dart';
 import '../types/tab_manager_state.dart';
 
 const int kKeepAliveTabLimit = 5;
+const String _kTabsBoxName = 'booru_tabs_v1';
+const String _kStateKey = 'state';
 
 final tabManagerProvider =
     NotifierProvider<TabManagerNotifier, TabManagerState>(
@@ -18,8 +25,90 @@ class TabManagerNotifier extends Notifier<TabManagerState> {
   int _idCounter = 0;
   final List<String> _recency = <String>[];
 
+  Box<String>? _box;
+  Future<void>? _readyFuture;
+  bool _loaded = false;
+  Timer? _persistDebounce;
+
   @override
-  TabManagerState build() => TabManagerState.initial();
+  TabManagerState build() {
+    _readyFuture = _initialize();
+    ref.listenSelf((_, _) {
+      if (!_loaded) return;
+      _schedulePersist();
+    });
+    ref.onDispose(() {
+      _persistDebounce?.cancel();
+    });
+    return TabManagerState.initial();
+  }
+
+  /// Resolves when the on-disk state has been merged in. Call this before
+  /// deciding whether to seed a default tab, otherwise the seed will race the
+  /// load and overwrite persisted tabs.
+  Future<void> ensureLoaded() => _readyFuture ?? Future.value();
+
+  Future<void> _initialize() async {
+    try {
+      _box = await Hive.openBox<String>(_kTabsBoxName);
+      final raw = _box!.get(_kStateKey);
+      if (raw != null) {
+        final json = jsonDecode(raw);
+        if (json is Map<String, dynamic>) {
+          final tabsJson = json['tabs'];
+          final restored = <BooruTab>[];
+          if (tabsJson is List) {
+            for (final t in tabsJson) {
+              if (t is Map<String, dynamic>) {
+                try {
+                  restored.add(BooruTab.fromJson(t));
+                } catch (_) {/* skip corrupt entry */}
+              }
+            }
+          }
+          final currentTabId = json['currentTabId'] as String?;
+          final hasCurrent =
+              currentTabId != null && restored.any((t) => t.id == currentTabId);
+          final nextCurrent = hasCurrent
+              ? currentTabId
+              : (restored.isNotEmpty ? restored.first.id : null);
+          _recency
+            ..clear()
+            ..addAll([if (nextCurrent != null) nextCurrent]);
+          state = TabManagerState(
+            tabs: restored,
+            currentTabId: nextCurrent,
+            // Only mark the active tab as alive on cold start; the rest stay
+            // dehydrated as placeholders so we don't fetch posts for every
+            // restored tab at once.
+            aliveTabIds: nextCurrent != null ? {nextCurrent} : const {},
+          );
+        }
+      }
+    } catch (_) {
+      // Box failed to open or content was unreadable — fall through to an
+      // empty in-memory state.
+    } finally {
+      _loaded = true;
+    }
+  }
+
+  void _schedulePersist() {
+    _persistDebounce?.cancel();
+    _persistDebounce = Timer(const Duration(milliseconds: 250), _persist);
+  }
+
+  Future<void> _persist() async {
+    final box = _box;
+    if (box == null) return;
+    final snapshot = jsonEncode({
+      'tabs': state.tabs.map((t) => t.toJson()).toList(),
+      if (state.currentTabId != null) 'currentTabId': state.currentTabId,
+    });
+    try {
+      await box.put(_kStateKey, snapshot);
+    } catch (_) {/* ignore disk errors */}
+  }
 
   String _newId() {
     _idCounter += 1;

@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 
 // Package imports:
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 // Project imports:
 import '../../../router.dart';

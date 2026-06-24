@@ -38,6 +38,7 @@ import '../../../posts/sources/types.dart';
 import '../../../search/queries/providers.dart';
 import '../../../search/queries/tag_query_composer.dart';
 import '../../../settings/providers.dart';
+import '../../../tabs/src/widgets/tab_manager_sheet.dart';
 import '../../../tags/autocompletes/autocomplete_repository.dart';
 import '../../../tags/local/providers.dart';
 import '../../../tags/metatag/types.dart';
@@ -220,6 +221,7 @@ class PostGestureHandler {
       onOpenSource: () => handleOpenSource(ref, post),
       onStartSlideshow: () =>
           PostDetailsPageViewScope.maybeOf(ref.context)?.startSlideshow(),
+      onOpenTabManager: () => showTabManagerSheet(ref.context, ref),
     );
 
     if (handled) return true;

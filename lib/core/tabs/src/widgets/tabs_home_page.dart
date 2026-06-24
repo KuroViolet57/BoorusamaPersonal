@@ -26,7 +26,11 @@ class _TabsHomePageState extends ConsumerState<TabsHomePage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Wait for the persisted tab list to load before seeding a default tab;
+      // otherwise the seed races the disk load and clobbers restored tabs.
+      await ref.read(tabManagerProvider.notifier).ensureLoaded();
+      if (!mounted) return;
       final state = ref.read(tabManagerProvider);
       if (state.tabs.isEmpty) {
         ref.read(tabManagerProvider.notifier).openNewTab(title: 'Home');

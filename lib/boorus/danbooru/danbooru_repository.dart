@@ -20,6 +20,7 @@ import '../../core/configs/config/providers.dart';
 import '../../core/configs/config/types.dart';
 import '../../core/configs/create/create.dart';
 import '../../core/configs/gesture/types.dart';
+import '../../core/tabs/src/widgets/tab_manager_sheet.dart';
 import '../../core/downloads/downloader/providers.dart';
 import '../../core/downloads/filename/providers.dart';
 import '../../core/downloads/filename/types.dart';
@@ -273,6 +274,7 @@ class DanbooruRepository extends BooruRepositoryDefault {
         ),
         onStartSlideshow: () =>
             PostDetailsPageViewScope.maybeOf(ref.context)?.startSlideshow(),
+        onOpenTabManager: () => showTabManagerSheet(ref.context, ref),
       );
 
   @override
@@ -295,6 +297,7 @@ bool handleDanbooruGestureAction(
   void Function()? onDownvote,
   void Function()? onEdit,
   void Function()? onStartSlideshow,
+  void Function()? onOpenTabManager,
 }) {
   switch (action) {
     case kToggleFavoriteAction:
@@ -316,6 +319,7 @@ bool handleDanbooruGestureAction(
         onOpenSource: onOpenSource,
         hapticLevel: hapticLevel,
         onStartSlideshow: onStartSlideshow,
+        onOpenTabManager: onOpenTabManager,
       );
   }
 
