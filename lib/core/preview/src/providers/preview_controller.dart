@@ -3,6 +3,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Project imports:
+import '../../../configs/config/types.dart';
 import '../../../configs/manage/providers.dart';
 import '../../../posts/post/providers.dart';
 import '../../../posts/post/types.dart';

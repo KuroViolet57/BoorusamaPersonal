@@ -6,13 +6,13 @@ import 'package:flutter/material.dart';
 
 // Package imports:
 import 'package:collection/collection.dart';
-import 'package:extended_image/extended_image.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 // Project imports:
 import '../../../configs/config/types.dart';
 import '../../../configs/manage/providers.dart';
+import '../../../images/booru_image.dart';
 import '../providers/preview_controller.dart';
 import '../types/anim_video_mode.dart';
 
@@ -202,7 +202,7 @@ class _BooruSelectorStrip extends ConsumerWidget {
                 return ChoiceChip(
                   selected: selected,
                   label: Text(
-                    c.name.isNotEmpty ? c.name : c.booruType.name,
+                    c.name.isNotEmpty ? c.name : c.auth.booruType.name,
                     overflow: TextOverflow.ellipsis,
                   ),
                   visualDensity: VisualDensity.compact,
@@ -263,7 +263,14 @@ class _PreviewGrid extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(previewControllerProvider);
     final async = ref.watch(previewPostsProvider);
+    final configs = ref.watch(booruConfigProvider);
+    final selectedAuth = state == null
+        ? null
+        : configs
+            .firstWhereOrNull((c) => c.id == state.configId)
+            ?.auth;
     return async.when(
       data: (posts) {
         if (posts.isEmpty) {
@@ -276,6 +283,9 @@ class _PreviewGrid extends ConsumerWidget {
               ),
             ),
           );
+        }
+        if (selectedAuth == null) {
+          return const SizedBox.shrink();
         }
         return GridView.builder(
           padding: const EdgeInsets.all(4),
@@ -293,13 +303,12 @@ class _PreviewGrid extends ConsumerWidget {
             if (url.isEmpty) {
               return Container(color: Colors.black12);
             }
-            return ClipRRect(
+            return BooruImage(
+              imageUrl: url,
+              config: selectedAuth,
+              fit: BoxFit.cover,
+              forceCover: true,
               borderRadius: BorderRadius.circular(4),
-              child: ExtendedImage.network(
-                url,
-                fit: BoxFit.cover,
-                cache: true,
-              ),
             );
           },
         );
