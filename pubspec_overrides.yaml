@@ -1,18 +1,12 @@
 dependency_overrides:
   cronet_http: ^1.7.0
   flutter_riverpod:
-    path: /opt/pubdeps/riverpod/packages/flutter_riverpod
+    git:
+      url: https://github.com/khoadng/riverpod.git
+      path: packages/flutter_riverpod
+      ref: 5a513c5aeee5a91d7cf5aa9a6e6a414b822bdee9
   riverpod:
-    path: /opt/pubdeps/riverpod/packages/riverpod
-  context_menus:
-    path: /opt/pubdeps/flutter-context-menu
-  reorderables:
-    path: /opt/pubdeps/reorderables
-  webview_cookie_manager:
-    path: /opt/pubdeps/webview_cookie_manager
-  flutter_launcher_icons:
-    path: /opt/pubdeps/flutter_launcher_icons
-  extended_image_library:
-    path: /opt/pubdeps/extended_image_library
-  flutter_avif:
-    path: /opt/pubdeps/flutter_avif_repo/flutter_avif
+    git:
+      url: https://github.com/khoadng/riverpod.git
+      path: packages/riverpod
+      ref: 5a513c5aeee5a91d7cf5aa9a6e6a414b822bdee9
