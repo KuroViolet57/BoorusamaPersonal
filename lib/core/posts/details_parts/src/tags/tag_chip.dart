@@ -8,6 +8,8 @@ import 'package:intl/intl.dart';
 // Project imports:
 import '../../../../configs/config/providers.dart';
 import '../../../../configs/config/types.dart';
+import '../../../../preview/preview.dart';
+import '../../../../tabs/tabs.dart';
 import '../../../../tags/categories/providers.dart';
 import '../../../../themes/colors/providers.dart';
 import '../../../../themes/colors/types.dart';
@@ -21,11 +23,13 @@ class TagChip extends ConsumerWidget {
     this.category,
     this.postCount,
     this.onTap,
+    this.onLongPress,
     this.maxWidth,
     this.fallbackColor,
     this.colorOverride,
     this.transformText = false,
     this.showPostCount = true,
+    this.enableTabActions = true,
   });
 
   final String text;
@@ -33,11 +37,13 @@ class TagChip extends ConsumerWidget {
   final int? postCount;
   final BooruConfigAuth auth;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final double? maxWidth;
   final Color? fallbackColor;
   final Color? colorOverride;
   final bool transformText;
   final bool showPostCount;
+  final bool enableTabActions;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -49,14 +55,26 @@ class TagChip extends ConsumerWidget {
 
     final subtitle = _buildSubtitle(loginDetails);
 
-    return RawTagChip(
-      text: displayText,
-      subtitle: subtitle,
-      onTap: onTap,
-      maxWidth: maxWidth,
-      backgroundColor: colors?.backgroundColor,
-      foregroundColor: colors?.foregroundColor,
-      borderColor: colors?.borderColor,
+    return Builder(
+      builder: (innerContext) => RawTagChip(
+        text: displayText,
+        subtitle: subtitle,
+        onTap: onTap,
+        onLongPress: onLongPress ??
+            (enableTabActions
+                ? () => showTabActionsForTag(
+                      innerContext,
+                      ref,
+                      tag: text,
+                      onPreview: () =>
+                          openTagPreview(ref, tag: text, fromAuth: auth),
+                    )
+                : null),
+        maxWidth: maxWidth,
+        backgroundColor: colors?.backgroundColor,
+        foregroundColor: colors?.foregroundColor,
+        borderColor: colors?.borderColor,
+      ),
     );
   }
 
@@ -93,6 +111,7 @@ class AutoCategoryTagChip extends ConsumerWidget {
     required this.auth,
     super.key,
     this.onTap,
+    this.onLongPress,
     this.maxWidth,
     this.fallbackColor,
     this.colorOverride,
@@ -102,6 +121,7 @@ class AutoCategoryTagChip extends ConsumerWidget {
   final String text;
   final BooruConfigAuth auth;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final double? maxWidth;
   final Color? fallbackColor;
   final Color? colorOverride;
@@ -116,6 +136,7 @@ class AutoCategoryTagChip extends ConsumerWidget {
       auth: auth,
       category: category,
       onTap: onTap,
+      onLongPress: onLongPress,
       maxWidth: maxWidth,
       fallbackColor: fallbackColor,
       colorOverride: colorOverride,

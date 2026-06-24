@@ -29,6 +29,7 @@ import '../router.dart';
 import '../search/search/routes.dart';
 import '../settings/providers.dart';
 import '../settings/routes.dart';
+import '../tabs/tabs.dart';
 import '../tags/favorites/routes.dart';
 import '../widgets/widgets.dart';
 
@@ -92,6 +93,7 @@ class Routes {
       detailsManagerRoutes,
       changelogRoutes,
       debuglogRoutes,
+      tabsRoutes(ref),
     ],
   );
 

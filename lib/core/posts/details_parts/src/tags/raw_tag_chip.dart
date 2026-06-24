@@ -11,6 +11,7 @@ class RawTagChip extends StatelessWidget {
     super.key,
     this.subtitle,
     this.onTap,
+    this.onLongPress,
     this.maxWidth,
     this.backgroundColor,
     this.foregroundColor,
@@ -23,6 +24,7 @@ class RawTagChip extends StatelessWidget {
   final int maxTextLength;
   final String? subtitle;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final double? maxWidth;
   final Color? backgroundColor;
   final Color? foregroundColor;
@@ -44,6 +46,7 @@ class RawTagChip extends StatelessWidget {
 
     return RawCompactChip(
       onTap: onTap,
+      onLongPress: onLongPress,
       padding: padding,
       foregroundColor: foregroundColor,
       backgroundColor: backgroundColor,

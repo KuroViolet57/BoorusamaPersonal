@@ -24,6 +24,7 @@ import '../../../premiums/types.dart';
 import '../../../search/search/routes.dart';
 import '../../../settings/providers.dart';
 import '../../../settings/routes.dart';
+import '../../../tabs/tabs.dart';
 import '../../../tags/favorites/routes.dart';
 import '../../constants.dart';
 import '../types/custom_home.dart';
@@ -130,6 +131,13 @@ class SideBarMenu extends ConsumerWidget {
                               goToSearchPage(ref);
                             },
                           ),
+                        SideMenuTile(
+                          icon: const Icon(Symbols.tab),
+                          title: const Text('Tabs'),
+                          onTap: () {
+                            goToTabsPage(ref);
+                          },
+                        ),
                         SideMenuTile(
                           icon: const Icon(Symbols.favorite),
                           title: Text(context.t.sideMenu.your_bookmarks),

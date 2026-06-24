@@ -51,6 +51,7 @@ class RawCompactChip extends StatelessWidget {
     required this.label,
     super.key,
     this.onTap,
+    this.onLongPress,
     this.backgroundColor,
     this.foregroundColor,
     this.padding,
@@ -58,6 +59,7 @@ class RawCompactChip extends StatelessWidget {
   });
 
   final void Function()? onTap;
+  final void Function()? onLongPress;
   final Widget label;
   final Color? backgroundColor;
   final Color? foregroundColor;
@@ -75,6 +77,7 @@ class RawCompactChip extends StatelessWidget {
             ? _FilledButtonDefaultOverlay(foregroundColor!)
             : null,
         onTap: () => onTap?.call(),
+        onLongPress: onLongPress,
         child: Container(
           padding:
               padding ??

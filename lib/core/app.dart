@@ -14,6 +14,7 @@ import '../foundation/platform.dart';
 import '../foundation/scrolling.dart';
 import 'analytics/widgets.dart';
 import 'backups/auto/trigger.dart';
+import 'preview/preview.dart';
 import 'router.dart';
 import 'settings/providers.dart';
 import 'themes/theme/types.dart';
@@ -66,14 +67,19 @@ class _App extends ConsumerWidget {
               statusBarIconBrightness: context.onBrightness,
             ),
             child: AppTitleBar(
-              child: Column(
+              child: Stack(
                 children: [
-                  const NetworkUnavailableIndicatorWithState(),
-                  Expanded(
-                    child: NetworkUnavailableRemovePadding(
-                      child: child!,
-                    ),
+                  Column(
+                    children: [
+                      const NetworkUnavailableIndicatorWithState(),
+                      Expanded(
+                        child: NetworkUnavailableRemovePadding(
+                          child: child!,
+                        ),
+                      ),
+                    ],
                   ),
+                  const Positioned.fill(child: PreviewOverlay()),
                 ],
               ),
             ),
