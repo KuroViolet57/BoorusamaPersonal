@@ -13,6 +13,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../configs/config/types.dart';
 import '../../../configs/manage/providers.dart';
 import '../../../images/booru_image.dart';
+import '../../../posts/details/routes.dart';
 import '../providers/preview_controller.dart';
 import '../types/anim_video_mode.dart';
 
@@ -25,7 +26,7 @@ class PreviewOverlay extends ConsumerStatefulWidget {
 
 class _PreviewOverlayState extends ConsumerState<PreviewOverlay> {
   Offset? _offset;
-  Size _size = const Size(320, 420);
+  Size? _size;
 
   @override
   Widget build(BuildContext context) {
@@ -35,12 +36,16 @@ class _PreviewOverlayState extends ConsumerState<PreviewOverlay> {
     final screen = MediaQuery.sizeOf(context);
     final maxW = screen.width;
     final maxH = screen.height;
-    final w = math.min(_size.width, maxW - 16);
-    final h = math.min(_size.height, maxH - 80);
+    // Default: cover most of the screen so thumbnails are large and easily
+    // tappable; user can shrink with the resize handle.
+    final defaultSize = Size(maxW * 0.92, maxH * 0.78);
+    final size = _size ?? defaultSize;
+    final w = math.min(size.width, maxW - 8);
+    final h = math.min(size.height, maxH - 60);
     final offset = _offset ??
         Offset(
           (maxW - w) / 2,
-          math.max((maxH - h) / 2, 40),
+          math.max((maxH - h) / 2, 32),
         );
 
     final clampedDx = offset.dx.clamp(0.0, maxW - w);
@@ -68,8 +73,8 @@ class _PreviewOverlayState extends ConsumerState<PreviewOverlay> {
               onResize: (delta) {
                 setState(() {
                   _size = Size(
-                    (_size.width + delta.dx).clamp(240.0, maxW - 16),
-                    (_size.height + delta.dy).clamp(280.0, maxH - 80),
+                    (size.width + delta.dx).clamp(240.0, maxW - 8),
+                    (size.height + delta.dy).clamp(280.0, maxH - 60),
                   );
                 });
               },
@@ -258,11 +263,41 @@ class _ModeToggleButton extends ConsumerWidget {
   }
 }
 
-class _PreviewGrid extends ConsumerWidget {
+class _PreviewGrid extends ConsumerStatefulWidget {
   const _PreviewGrid();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_PreviewGrid> createState() => _PreviewGridState();
+}
+
+class _PreviewGridState extends ConsumerState<_PreviewGrid> {
+  final _scroll = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scroll
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scroll.hasClients) return;
+    final max = _scroll.position.maxScrollExtent;
+    if (max <= 0) return;
+    if (_scroll.position.pixels >= max - 400) {
+      ref.read(previewPostsProvider.notifier).loadMore();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(previewControllerProvider);
     final async = ref.watch(previewPostsProvider);
     final configs = ref.watch(booruConfigProvider);
@@ -287,28 +322,62 @@ class _PreviewGrid extends ConsumerWidget {
         if (selectedAuth == null) {
           return const SizedBox.shrink();
         }
+        final notifier = ref.read(previewPostsProvider.notifier);
+        final showFooter = !notifier.isExhausted;
         return GridView.builder(
+          controller: _scroll,
           padding: const EdgeInsets.all(4),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 3,
             mainAxisSpacing: 4,
             crossAxisSpacing: 4,
           ),
-          itemCount: posts.length,
+          itemCount: posts.length + (showFooter ? 1 : 0),
           itemBuilder: (context, i) {
+            if (i == posts.length) {
+              // Footer cell for the loading indicator; triggers a fetch on
+              // first appearance in case the user reached the end without an
+              // intermediate scroll event firing.
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) notifier.loadMore();
+              });
+              return const Padding(
+                padding: EdgeInsets.all(8),
+                child: Center(
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              );
+            }
             final p = posts[i];
             final url = p.thumbnailImageUrl.isNotEmpty
                 ? p.thumbnailImageUrl
                 : p.sampleImageUrl;
-            if (url.isEmpty) {
-              return Container(color: Colors.black12);
-            }
-            return BooruImage(
-              imageUrl: url,
-              config: selectedAuth,
-              fit: BoxFit.cover,
-              forceCover: true,
-              borderRadius: BorderRadius.circular(4),
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                // Pushing a new route hides this preview (the controller
+                // reacts to onPush via the route observer) and the user can
+                // open another preview scoped to the new post.
+                goToPostDetailsPageFromPosts(
+                  ref: ref,
+                  posts: posts,
+                  initialIndex: i,
+                  initialThumbnailUrl: url.isEmpty ? null : url,
+                );
+              },
+              child: url.isEmpty
+                  ? Container(color: Colors.black12)
+                  : BooruImage(
+                      imageUrl: url,
+                      config: selectedAuth,
+                      fit: BoxFit.cover,
+                      forceCover: true,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
             );
           },
         );

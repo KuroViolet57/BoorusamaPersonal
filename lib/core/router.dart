@@ -10,6 +10,7 @@ import '../boorus/eshuushuu/router.dart';
 import '../boorus/shimmie2/router.dart';
 import '../boorus/szurubooru/router.dart';
 import 'analytics/analytics_observer.dart';
+import 'preview/src/providers/preview_route_observer.dart';
 import 'router.dart';
 
 export 'package:boorusama/core/routers/routers.dart';
@@ -26,6 +27,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     observers: [
       AnalyticsObserver(() => ref),
       routeObserver,
+      PreviewRouteObserver.fromRef(ref),
     ],
     routes: [
       Routes.home(ref),

@@ -25,8 +25,13 @@ class PreviewState extends Equatable {
     mode: mode ?? this.mode,
   );
 
+  /// The tag normalised the way every booru expects (spaces → underscores,
+  /// trimmed). Apply this everywhere we hit the network — UI display still uses
+  /// [tag].
+  String get queryTag => tag.trim().replaceAll(RegExp(r'\s+'), '_');
+
   List<String> effectiveQueryTags(List<String> alwaysIncluded) {
-    final base = <String>[tag, ...alwaysIncluded];
+    final base = <String>[queryTag, ...alwaysIncluded];
     final extra = mode.extraTag;
     if (extra == null) return base;
     if (alwaysIncluded.contains(extra)) return base;

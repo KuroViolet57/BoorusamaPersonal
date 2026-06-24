@@ -123,6 +123,15 @@ class SideBarMenu extends ConsumerWidget {
                       ),
                     ] else
                       ...[
+                        // Pinned at the top of the menu so its position is the
+                        // same across every booru, regardless of viewKey.
+                        SideMenuTile(
+                          icon: const Icon(Symbols.tab),
+                          title: const Text('Tabs'),
+                          onTap: () {
+                            goToTabsPage(ref);
+                          },
+                        ),
                         if (viewKey != null && viewKey.isAlt)
                           SideMenuTile(
                             icon: const Icon(Symbols.search),
@@ -131,13 +140,6 @@ class SideBarMenu extends ConsumerWidget {
                               goToSearchPage(ref);
                             },
                           ),
-                        SideMenuTile(
-                          icon: const Icon(Symbols.tab),
-                          title: const Text('Tabs'),
-                          onTap: () {
-                            goToTabsPage(ref);
-                          },
-                        ),
                         SideMenuTile(
                           icon: const Icon(Symbols.favorite),
                           title: Text(context.t.sideMenu.your_bookmarks),
