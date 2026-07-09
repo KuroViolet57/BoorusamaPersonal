@@ -13,6 +13,7 @@ import '../../../bulk_downloads/widgets.dart';
 import '../../../configs/manage/providers.dart';
 import '../../../premiums/providers.dart';
 import '../../../search/search/routes.dart';
+import '../../../search_tabs/widgets.dart';
 
 const _kDefaultView = 'default';
 
@@ -89,6 +90,10 @@ final kDefaultAltHomeView = {
     displayName: (context) => context.t.settings.search.search,
     builder: (context, booruBuilder) =>
         booruBuilder.searchPageBuilder(context, const SearchParams()),
+  ),
+  const CustomHomeViewKey('search_tabs'): CustomHomeDataBuilder(
+    displayName: (context) => 'Search tabs',
+    builder: (context, booruBuilder) => const SearchTabsPage(),
   ),
   const CustomHomeViewKey('bookmark'): CustomHomeDataBuilder(
     displayName: (context) => context.t.sideMenu.your_bookmarks,

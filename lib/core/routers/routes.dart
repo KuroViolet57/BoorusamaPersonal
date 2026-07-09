@@ -27,6 +27,7 @@ import '../posts/post/routes.dart';
 import '../premiums/routes.dart';
 import '../router.dart';
 import '../search/search/routes.dart';
+import '../search_tabs/routes.dart';
 import '../settings/providers.dart';
 import '../settings/routes.dart';
 import '../tags/favorites/routes.dart';
@@ -74,6 +75,7 @@ class Routes {
       addBooruConfigRoutes(ref),
       updateBooruConfigRoutes(ref),
       searchRoutes(ref),
+      searchTabsRoutes,
       postDetailsRoutes(ref),
       singlePostDetailsRoutes(ref),
       postFavoritesRoutes(ref),

@@ -8,9 +8,13 @@ import 'package:i18n/i18n.dart';
 
 // Project imports:
 import '../../../../../foundation/clipboard.dart';
+import '../../../../../foundation/toast.dart';
 import '../../../../blacklists/providers.dart';
+import '../../../../configs/manage/providers.dart';
 import '../../../../search/search/routes.dart';
+import '../../../../search_tabs/providers.dart';
 import '../../../favorites/providers.dart';
+import '../../../preview/providers.dart';
 
 class GeneralTagContextMenu extends ConsumerWidget
     with TagContextMenuButtonConfigMixin {
@@ -34,6 +38,8 @@ class GeneralTagContextMenu extends ConsumerWidget
         buttonConfigs: [
           copyButton(context, tag),
           searchButton(ref, tag),
+          addToTabButton(ref, tag),
+          previewButton(ref, tag),
           ContextMenuButtonConfig(
             context.t.post.detail.add_to_favorites,
             onPressed: () {
@@ -76,6 +82,35 @@ mixin TagContextMenuButtonConfigMixin {
         ref.context.t.tags.actions.search_single,
         onPressed: () {
           goToSearchPage(ref, tag: tag);
+        },
+      );
+
+  ContextMenuButtonConfig addToTabButton(WidgetRef ref, String tag) =>
+      ContextMenuButtonConfig(
+        'Add to tab',
+        onPressed: () {
+          ref
+              .read(searchTabsProvider.notifier)
+              .add(
+                query: tag,
+                configId: ref.read(currentBooruConfigProvider).id,
+                activate: false,
+              );
+
+          showSuccessToast(ref.context, 'Added "$tag" to tabs');
+        },
+      );
+
+  ContextMenuButtonConfig previewButton(WidgetRef ref, String tag) =>
+      ContextMenuButtonConfig(
+        'Preview',
+        onPressed: () {
+          ref
+              .read(tagPreviewProvider.notifier)
+              .open(
+                tag: tag,
+                configId: ref.read(currentBooruConfigProvider).id,
+              );
         },
       );
 }
