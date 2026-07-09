@@ -44,7 +44,9 @@ class SearchTabView extends ConsumerWidget {
                 index: index,
                 autoScrollController: autoScrollController,
                 controller: controller,
-                useHero: useHero,
+                // Multiple live tabs can contain the same post, which would
+                // create duplicate hero tags within one route.
+                useHero: false,
                 config: configAuth,
                 imageConfig: configAuth,
               ),
