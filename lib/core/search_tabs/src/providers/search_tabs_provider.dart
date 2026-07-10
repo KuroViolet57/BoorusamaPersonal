@@ -6,9 +6,60 @@ import '../../../cache/providers.dart';
 import '../../../configs/config/types.dart';
 import '../../../configs/manage/providers.dart';
 import '../types/search_tab.dart';
+import 'search_tab_sessions.dart';
 
 const kSearchTabsDataKey = 'search_tabs';
-const kMaxLiveSearchTabs = 4;
+const kSearchTabsInsertPositionKey = 'search_tabs_insert_position';
+const kSearchTabsSortModeKey = 'search_tabs_sort_mode';
+const kMaxLiveSearchTabs = 6;
+
+enum SearchTabInsertPosition {
+  end,
+  afterActive
+  ;
+
+  static SearchTabInsertPosition parse(String? value) => switch (value) {
+    'afterActive' => SearchTabInsertPosition.afterActive,
+    _ => SearchTabInsertPosition.end,
+  };
+
+  String get data => name;
+
+  String get label => switch (this) {
+    SearchTabInsertPosition.end => 'At the end of the list',
+    SearchTabInsertPosition.afterActive => 'Next to the active tab',
+  };
+}
+
+enum SearchTabsSortMode {
+  manual,
+  newestFirst,
+  oldestFirst,
+  alphabetical,
+  alphabeticalDesc,
+  booruClusters
+  ;
+
+  static SearchTabsSortMode parse(String? value) => switch (value) {
+    'newestFirst' => SearchTabsSortMode.newestFirst,
+    'oldestFirst' => SearchTabsSortMode.oldestFirst,
+    'alphabetical' => SearchTabsSortMode.alphabetical,
+    'alphabeticalDesc' => SearchTabsSortMode.alphabeticalDesc,
+    'booruClusters' => SearchTabsSortMode.booruClusters,
+    _ => SearchTabsSortMode.manual,
+  };
+
+  String get data => name;
+
+  String get label => switch (this) {
+    SearchTabsSortMode.manual => 'Manual (drag to reorder)',
+    SearchTabsSortMode.newestFirst => 'Newest first',
+    SearchTabsSortMode.oldestFirst => 'Oldest first',
+    SearchTabsSortMode.alphabetical => 'A to Z',
+    SearchTabsSortMode.alphabeticalDesc => 'Z to A',
+    SearchTabsSortMode.booruClusters => 'Grouped by booru',
+  };
+}
 
 final searchTabsProvider =
     NotifierProvider<SearchTabsNotifier, SearchTabsState>(
@@ -35,8 +86,20 @@ class SearchTabsNotifier extends Notifier<SearchTabsState> {
       configId: configId,
     );
 
+    final position = ref.read(searchTabInsertPositionProvider);
+    final tabs = [...state.tabs];
+    final activeIndex = tabs.indexWhere((e) => e.id == state.activeId);
+
+    final insertIndex = switch (position) {
+      SearchTabInsertPosition.afterActive when activeIndex >= 0 =>
+        activeIndex + 1,
+      _ => tabs.length,
+    };
+
+    tabs.insert(insertIndex, tab);
+
     state = state.copyWith(
-      tabs: [...state.tabs, tab],
+      tabs: tabs,
       activeId: activate ? () => tab.id : null,
     );
     _save();
@@ -55,6 +118,7 @@ class SearchTabsNotifier extends Notifier<SearchTabsState> {
       activeId: () => activeId,
     );
     _save();
+    ref.read(searchTabSessionCacheProvider).remove(id);
   }
 
   int? _closestTabId(
@@ -102,6 +166,7 @@ class SearchTabsNotifier extends Notifier<SearchTabsState> {
       ],
     );
     _save();
+    ref.read(searchTabSessionCacheProvider).remove(id);
   }
 
   void rename(int id, String? label) {
@@ -130,9 +195,14 @@ class SearchTabsNotifier extends Notifier<SearchTabsState> {
       ],
     );
     _save();
+    ref.read(searchTabSessionCacheProvider).remove(id);
   }
 
   void closeOthers(int id) {
+    final removed = state.tabs.where((e) => e.id != id).map((e) => e.id);
+    final cache = ref.read(searchTabSessionCacheProvider);
+    removed.toList().forEach(cache.remove);
+
     state = state.copyWith(
       tabs: state.tabs.where((e) => e.id == id).toList(),
       activeId: () => id,
@@ -143,6 +213,7 @@ class SearchTabsNotifier extends Notifier<SearchTabsState> {
   void clear() {
     state = const SearchTabsState.empty();
     _save();
+    ref.read(searchTabSessionCacheProvider).clear();
   }
 
   void _save() {
@@ -158,3 +229,48 @@ final searchTabConfigProvider = Provider.family<BooruConfig?, int>(
   },
   name: 'searchTabConfigProvider',
 );
+
+final searchTabInsertPositionProvider =
+    NotifierProvider<SearchTabInsertPositionNotifier, SearchTabInsertPosition>(
+      SearchTabInsertPositionNotifier.new,
+      name: 'searchTabInsertPositionProvider',
+    );
+
+class SearchTabInsertPositionNotifier
+    extends Notifier<SearchTabInsertPosition> {
+  @override
+  SearchTabInsertPosition build() {
+    final box = ref.watch(miscDataBoxProvider);
+
+    return SearchTabInsertPosition.parse(
+      box.get(kSearchTabsInsertPositionKey),
+    );
+  }
+
+  void set(SearchTabInsertPosition position) {
+    state = position;
+    ref
+        .read(miscDataBoxProvider)
+        .put(kSearchTabsInsertPositionKey, position.data);
+  }
+}
+
+final searchTabsSortModeProvider =
+    NotifierProvider<SearchTabsSortModeNotifier, SearchTabsSortMode>(
+      SearchTabsSortModeNotifier.new,
+      name: 'searchTabsSortModeProvider',
+    );
+
+class SearchTabsSortModeNotifier extends Notifier<SearchTabsSortMode> {
+  @override
+  SearchTabsSortMode build() {
+    final box = ref.watch(miscDataBoxProvider);
+
+    return SearchTabsSortMode.parse(box.get(kSearchTabsSortModeKey));
+  }
+
+  void set(SearchTabsSortMode mode) {
+    state = mode;
+    ref.read(miscDataBoxProvider).put(kSearchTabsSortModeKey, mode.data);
+  }
+}

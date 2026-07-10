@@ -13,6 +13,7 @@ import '../../../configs/config/providers.dart';
 import '../../../configs/config/types.dart';
 import '../../../configs/create/create.dart';
 import '../../../configs/gesture/types.dart';
+import '../../../search_tabs/routes.dart';
 import '../../../downloads/downloader/providers.dart';
 import '../../../downloads/filename/providers.dart';
 import '../../../downloads/urls/providers.dart';
@@ -220,6 +221,7 @@ class PostGestureHandler {
       onOpenSource: () => handleOpenSource(ref, post),
       onStartSlideshow: () =>
           PostDetailsPageViewScope.maybeOf(ref.context)?.startSlideshow(),
+      onOpenTabManager: () => goToSearchTabsPage(ref),
     );
 
     if (handled) return true;

@@ -54,6 +54,7 @@ class PostGrid<T extends Post> extends ConsumerStatefulWidget {
     this.multiSelectActions,
     this.scrollToTopButton,
     this.enablePullToRefresh,
+    this.refreshAtStart = true,
   });
 
   final List<Widget>? sliverHeaders;
@@ -68,6 +69,7 @@ class PostGrid<T extends Post> extends ConsumerStatefulWidget {
   final Widget? multiSelectActions;
   final Widget? scrollToTopButton;
   final bool? enablePullToRefresh;
+  final bool refreshAtStart;
 
   @override
   ConsumerState<PostGrid<T>> createState() => _PostGridState();
@@ -119,6 +121,7 @@ class _PostGridState<T extends Post> extends ConsumerState<PostGrid<T>> {
           _DisableGridItemHeroOnPop(disableHero: _disableHero),
         ],
         scrollController: _autoScrollController,
+        refreshAtStart: widget.refreshAtStart,
         footer: Consumer(
           builder: (_, ref, _) {
             final booruBuilder = ref.watch(

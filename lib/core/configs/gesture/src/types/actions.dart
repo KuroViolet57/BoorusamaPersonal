@@ -24,6 +24,7 @@ const kUpvoteAction = 'upvote';
 const kDownvoteAction = 'downvote';
 const kEditAction = 'edit';
 const kViewArtistAction = 'viewArtist';
+const kOpenTabManagerAction = 'openTabManager';
 
 const kDefaultAction = 'default';
 
@@ -35,6 +36,7 @@ const kDefaultGestureActions = {
   kViewTagsAction,
   kViewOriginalAction,
   kOpenSourceAction,
+  kOpenTabManagerAction,
 };
 
 const kDefaultFullviewActions = {
@@ -51,6 +53,7 @@ String describeDefaultGestureAction(String? action, BuildContext context) =>
       kViewOriginalAction => context.t.post.action.view_original,
       kOpenSourceAction => context.t.post.action.view_in_browser,
       kStartSlideshowAction => context.t.post.action.slideshow,
+      kOpenTabManagerAction => 'Open tab manager',
       kDefaultAction => context.t.post.action.use_default,
       _ => context.t.post.action.none,
     };
@@ -74,6 +77,7 @@ bool handleDefaultGestureAction(
   void Function()? onViewOriginal,
   void Function()? onOpenSource,
   void Function()? onStartSlideshow,
+  void Function()? onOpenTabManager,
 }) {
   switch (action) {
     case kDownloadAction:
@@ -90,6 +94,8 @@ bool handleDefaultGestureAction(
       onOpenSource?.call();
     case kStartSlideshowAction:
       onStartSlideshow?.call();
+    case kOpenTabManagerAction:
+      onOpenTabManager?.call();
     default:
       return false;
   }

@@ -7,3 +7,12 @@ import '../../../router.dart';
 void goToSearchTabsPage(WidgetRef ref) {
   ref.router.push('/search_tabs');
 }
+
+void goToSearchTabViewPage(WidgetRef ref, int tabId) {
+  ref.router.push(
+    Uri(
+      path: '/search_tabs/view',
+      queryParameters: {'id': '$tabId'},
+    ).toString(),
+  );
+}
