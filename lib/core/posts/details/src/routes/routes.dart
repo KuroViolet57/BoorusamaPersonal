@@ -31,7 +31,9 @@ GoRoute postDetailsRoutes(Ref ref) => GoRoute(
 
     final widget = InheritedDetailsContext(
       context: context,
-      child: const CurrentPostDetailsPage(),
+      child: context.configSearch == null
+          ? const CurrentPostDetailsPage()
+          : const PayloadPostDetailsPage(),
     );
 
     return _detailsPageBuilder(

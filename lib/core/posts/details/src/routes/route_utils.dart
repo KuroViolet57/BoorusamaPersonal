@@ -16,6 +16,7 @@ void goToPostDetailsPageFromPosts<T extends Post>({
   required int initialIndex,
   required String? initialThumbnailUrl,
   AutoScrollController? scrollController,
+  BooruConfigSearch? configSearch,
 }) => goToPostDetailsPageCore(
   ref: ref,
   posts: posts,
@@ -23,6 +24,7 @@ void goToPostDetailsPageFromPosts<T extends Post>({
   scrollController: scrollController,
   initialThumbnailUrl: initialThumbnailUrl,
   hero: false,
+  configSearch: configSearch,
 );
 
 void goToPostDetailsPageFromController<T extends Post>({
@@ -47,6 +49,7 @@ void goToPostDetailsPageCore<T extends Post>({
   required bool hero,
   required String? initialThumbnailUrl,
   AutoScrollController? scrollController,
+  BooruConfigSearch? configSearch,
 }) {
   ref.router.push(
     Uri(
@@ -59,7 +62,7 @@ void goToPostDetailsPageCore<T extends Post>({
       isDesktop: ref.context.isLargeScreen,
       hero: hero,
       initialThumbnailUrl: initialThumbnailUrl,
-      configSearch: null,
+      configSearch: configSearch,
     ),
   );
 }

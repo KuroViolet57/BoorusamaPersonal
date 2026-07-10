@@ -1,3 +1,7 @@
+// Dart imports:
+import 'dart:convert';
+import 'dart:math';
+
 // Flutter imports:
 import 'package:flutter/material.dart';
 
@@ -8,6 +12,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 // Project imports:
 import '../../../../foundation/toast.dart';
+import '../../../cache/providers.dart';
 import '../../../config_widgets/website_logo.dart';
 import '../../../configs/config/types.dart';
 import '../../../configs/manage/providers.dart';
@@ -16,8 +21,9 @@ import '../../../search_tabs/providers.dart';
 import 'tag_preview_grid.dart';
 import 'tag_preview_provider.dart';
 
+const kTagPreviewGeometryKey = 'tag_preview_geometry';
+
 const _kMinWindowSize = Size(240, 300);
-const _kDefaultWindowSize = Size(300, 440);
 const _kBubbleSize = 52.0;
 
 /// Hosts the floating tag preview window above the whole app so it survives
@@ -32,20 +38,74 @@ class TagPreviewWindowHost extends ConsumerStatefulWidget {
 
 class _TagPreviewWindowHostState extends ConsumerState<TagPreviewWindowHost> {
   Offset? _position;
-  Size _size = _kDefaultWindowSize;
+  Size? _size;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGeometry();
+  }
+
+  void _loadGeometry() {
+    try {
+      final raw = ref.read(miscDataBoxProvider).get(kTagPreviewGeometryKey);
+      if (raw == null || raw.isEmpty) return;
+
+      final json = jsonDecode(raw);
+      if (json case {
+        'dx': final num dx,
+        'dy': final num dy,
+        'w': final num w,
+        'h': final num h,
+      }) {
+        _position = Offset(dx.toDouble(), dy.toDouble());
+        _size = Size(w.toDouble(), h.toDouble());
+      }
+    } catch (_) {
+      // Corrupted geometry data, fall back to defaults.
+    }
+  }
+
+  void _saveGeometry() {
+    final position = _position;
+    final size = _size;
+    if (position == null || size == null) return;
+
+    ref
+        .read(miscDataBoxProvider)
+        .put(
+          kTagPreviewGeometryKey,
+          jsonEncode({
+            'dx': position.dx,
+            'dy': position.dy,
+            'w': size.width,
+            'h': size.height,
+          }),
+        );
+  }
+
+  Size _defaultSize(Size screen) => Size(
+    min(screen.width * 0.92, 480),
+    min(screen.height * 0.62, 680),
+  );
 
   Offset _initialPosition(Size screen, Size windowSize) => Offset(
     (screen.width - windowSize.width) / 2,
-    (screen.height - windowSize.height) / 3,
+    max((screen.height - windowSize.height) / 4, 0),
   );
 
   void _clampToScreen(Size screen) {
     final position = _position;
-    if (position == null) return;
+    final size = _size;
+    if (position == null || size == null) return;
 
+    _size = Size(
+      size.width.clamp(_kMinWindowSize.width, screen.width),
+      size.height.clamp(_kMinWindowSize.height, screen.height * 0.92),
+    );
     _position = Offset(
       position.dx.clamp(
-        -(_size.width - 60),
+        -(_size!.width - 60),
         screen.width - 60,
       ),
       position.dy.clamp(0, screen.height - 60),
@@ -63,10 +123,9 @@ class _TagPreviewWindowHostState extends ConsumerState<TagPreviewWindowHost> {
     final screen = MediaQuery.sizeOf(context);
     final viewPadding = MediaQuery.viewPaddingOf(context);
 
-    final windowSize = state.minimized
-        ? const Size(_kBubbleSize, _kBubbleSize)
-        : _size;
-    final position = _position ?? _initialPosition(screen, windowSize);
+    final size = _size ?? _defaultSize(screen);
+    _size = size;
+    final position = _position ?? _initialPosition(screen, size);
     _position = position;
     _clampToScreen(screen);
 
@@ -82,28 +141,31 @@ class _TagPreviewWindowHostState extends ConsumerState<TagPreviewWindowHost> {
                     _position = _position! + delta;
                     _clampToScreen(screen);
                   }),
+                  onDragEnd: _saveGeometry,
                   onTap: () =>
                       ref.read(tagPreviewProvider.notifier).setMinimized(false),
                 )
               : TagPreviewWindow(
                   state: state,
-                  size: _size,
+                  size: _size!,
                   onDrag: (delta) => setState(() {
                     _position = _position! + delta;
                     _clampToScreen(screen);
                   }),
+                  onDragEnd: _saveGeometry,
                   onResize: (delta) => setState(() {
                     _size = Size(
-                      (_size.width + delta.dx).clamp(
+                      (_size!.width + delta.dx).clamp(
                         _kMinWindowSize.width,
                         screen.width,
                       ),
-                      (_size.height + delta.dy).clamp(
+                      (_size!.height + delta.dy).clamp(
                         _kMinWindowSize.height,
-                        screen.height * 0.9,
+                        screen.height * 0.92,
                       ),
                     );
                   }),
+                  onResizeEnd: _saveGeometry,
                 ),
         ),
       ],
@@ -115,11 +177,13 @@ class _MinimizedBubble extends StatelessWidget {
   const _MinimizedBubble({
     required this.state,
     required this.onDrag,
+    required this.onDragEnd,
     required this.onTap,
   });
 
   final TagPreviewState state;
   final void Function(Offset delta) onDrag;
+  final VoidCallback onDragEnd;
   final VoidCallback onTap;
 
   @override
@@ -128,6 +192,7 @@ class _MinimizedBubble extends StatelessWidget {
 
     return GestureDetector(
       onPanUpdate: (details) => onDrag(details.delta),
+      onPanEnd: (_) => onDragEnd(),
       child: Material(
         elevation: 6,
         shape: const CircleBorder(),
@@ -154,14 +219,18 @@ class TagPreviewWindow extends ConsumerWidget {
     required this.state,
     required this.size,
     required this.onDrag,
+    required this.onDragEnd,
     required this.onResize,
+    required this.onResizeEnd,
     super.key,
   });
 
   final TagPreviewState state;
   final Size size;
   final void Function(Offset delta) onDrag;
+  final VoidCallback onDragEnd;
   final void Function(Offset delta) onResize;
+  final VoidCallback onResizeEnd;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -184,6 +253,7 @@ class TagPreviewWindow extends ConsumerWidget {
               state: state,
               config: config,
               onDrag: onDrag,
+              onDragEnd: onDragEnd,
             ),
             _BooruSelectorStrip(
               configs: configs,
@@ -210,7 +280,6 @@ class TagPreviewWindow extends ConsumerWidget {
                             ),
                             config: config,
                             query: state.effectiveQuery,
-                            onPostOpen: () => notifier.setMinimized(true),
                           ),
                         ),
                         Positioned(
@@ -218,6 +287,7 @@ class TagPreviewWindow extends ConsumerWidget {
                           bottom: 0,
                           child: GestureDetector(
                             onPanUpdate: (details) => onResize(details.delta),
+                            onPanEnd: (_) => onResizeEnd(),
                             child: Container(
                               padding: const EdgeInsets.all(6),
                               color: Colors.transparent,
@@ -244,11 +314,13 @@ class _WindowHeader extends ConsumerWidget {
     required this.state,
     required this.config,
     required this.onDrag,
+    required this.onDragEnd,
   });
 
   final TagPreviewState state;
   final BooruConfig? config;
   final void Function(Offset delta) onDrag;
+  final VoidCallback onDragEnd;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -258,6 +330,7 @@ class _WindowHeader extends ConsumerWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onPanUpdate: (details) => onDrag(details.delta),
+      onPanEnd: (_) => onDragEnd(),
       child: Container(
         color: colorScheme.surfaceContainerHighest,
         padding: const EdgeInsets.only(left: 10, right: 2),
@@ -308,7 +381,6 @@ class _WindowHeader extends ConsumerWidget {
                   ref.read(currentBooruConfigProvider.notifier).update(config);
                 }
 
-                notifier.setMinimized(true);
                 goToSearchPage(ref, tag: state.effectiveQuery);
               },
             ),

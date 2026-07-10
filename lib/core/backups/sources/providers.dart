@@ -11,6 +11,7 @@ import 'downloads_source.dart';
 import 'favorite_tags_source.dart';
 import 'search_history_source.dart';
 import 'settings_source.dart';
+import 'user_prefs_source.dart';
 
 final booruConfigsBackupSourceProvider = Provider<BackupDataSource>((ref) {
   return BooruConfigsBackupSource(ref);
@@ -40,6 +41,10 @@ final bookmarksBackupSourceProvider = Provider<BackupDataSource>((ref) {
   return BookmarksBackupSource(ref);
 });
 
+final userPrefsBackupSourceProvider = Provider<BackupDataSource>((ref) {
+  return UserPrefsBackupSource(ref);
+});
+
 final backupRegistryProvider = Provider<BackupRegistry>((ref) {
   final registry = BackupRegistry()
     ..register(ref.read(booruConfigsBackupSourceProvider))
@@ -48,7 +53,8 @@ final backupRegistryProvider = Provider<BackupRegistry>((ref) {
     ..register(ref.read(searchHistoryBackupSourceProvider))
     ..register(ref.read(downloadsBackupSourceProvider))
     ..register(ref.read(blacklistedTagsBackupSourceProvider))
-    ..register(ref.read(bookmarksBackupSourceProvider));
+    ..register(ref.read(bookmarksBackupSourceProvider))
+    ..register(ref.read(userPrefsBackupSourceProvider));
   return registry;
 });
 
@@ -60,5 +66,6 @@ final allBackupSourcesProvider = Provider<void>((ref) {
     ..watch(searchHistoryBackupSourceProvider)
     ..watch(downloadsBackupSourceProvider)
     ..watch(blacklistedTagsBackupSourceProvider)
-    ..watch(bookmarksBackupSourceProvider);
+    ..watch(bookmarksBackupSourceProvider)
+    ..watch(userPrefsBackupSourceProvider);
 });

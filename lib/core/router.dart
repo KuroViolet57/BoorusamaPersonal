@@ -11,6 +11,7 @@ import '../boorus/shimmie2/router.dart';
 import '../boorus/szurubooru/router.dart';
 import 'analytics/analytics_observer.dart';
 import 'router.dart';
+import 'tags/preview/providers.dart';
 
 export 'package:boorusama/core/routers/routers.dart';
 
@@ -25,6 +26,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     navigatorKey: navigatorKey,
     observers: [
       AnalyticsObserver(() => ref),
+      TagPreviewRouteObserver(() => ref),
       routeObserver,
     ],
     routes: [

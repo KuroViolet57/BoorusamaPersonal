@@ -17,12 +17,10 @@ class TagPreviewGrid extends ConsumerStatefulWidget {
     required this.config,
     required this.query,
     super.key,
-    this.onPostOpen,
   });
 
   final BooruConfig config;
   final String query;
-  final VoidCallback? onPostOpen;
 
   @override
   ConsumerState<TagPreviewGrid> createState() => _TagPreviewGridState();
@@ -171,7 +169,13 @@ class _TagPreviewGridState extends ConsumerState<TagPreviewGrid> {
         return _PreviewGridItem(
           post: post,
           config: widget.config,
-          onOpen: widget.onPostOpen,
+          onTap: () => goToPostDetailsPageFromPosts(
+            ref: ref,
+            posts: List<Post>.of(_posts),
+            initialIndex: index,
+            initialThumbnailUrl: post.thumbnailImageUrl,
+            configSearch: widget.config.search,
+          ),
         );
       },
     );
@@ -182,24 +186,17 @@ class _PreviewGridItem extends ConsumerWidget {
   const _PreviewGridItem({
     required this.post,
     required this.config,
-    this.onOpen,
+    required this.onTap,
   });
 
   final Post post;
   final BooruConfig config;
-  final VoidCallback? onOpen;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
-      onTap: () {
-        onOpen?.call();
-        goToSinglePostDetailsPage(
-          ref: ref,
-          postId: NumericPostId(post.id),
-          configSearch: config.search,
-        );
-      },
+      onTap: onTap,
       child: Stack(
         fit: StackFit.expand,
         children: [
