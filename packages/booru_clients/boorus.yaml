@@ -222,6 +222,7 @@
     protocol: https_1
     sites:
       - https://rule34.paheal.net/
+      - https://rule34hentai.net/
 
 - szurubooru:
     metadata:
@@ -271,3 +272,12 @@
     protocol: https_2
     sites:
       - https://nozomi.la/
+
+- rule34xyz:
+    metadata:
+      id: 36
+      display-name: Rule 34 XYZ
+      single-site: true
+    protocol: https_2
+    sites:
+      - https://rule34.xyz/

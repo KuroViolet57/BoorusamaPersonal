@@ -5,6 +5,7 @@ import 'dart:convert';
 // Package imports:
 import 'package:coreutils/coreutils.dart';
 import 'package:dio/dio.dart';
+import 'package:html/parser.dart' as html_parser;
 import 'package:xml/xml.dart';
 
 // Project imports:
@@ -71,6 +72,10 @@ class Shimmie2Client {
     },
   };
 
+  // Some Shimmie2 sites (e.g. rule34hentai.net) don't enable the Danbooru
+  // API extension; scrape the HTML list pages there instead.
+  var _htmlOnly = false;
+
   Future<List<PostDto>> getPosts({
     List<String>? tags,
     int? page,
@@ -86,22 +91,105 @@ class Shimmie2Client {
       );
     }
 
+    if (_htmlOnly) {
+      return _getPostsFromHtml(tags: tags, page: page);
+    }
+
     final isEmpty = tags?.join(' ').isEmpty ?? true;
 
+    try {
+      final response = await _dio.get(
+        '/api/danbooru/find_posts',
+        queryParameters: {
+          if (!isEmpty) 'tags': tags?.join(' '),
+          'page': ?page,
+          'limit': ?limit,
+          ..._authParams,
+        },
+      );
+
+      return _parsePosts(
+        response,
+        baseUrl: _dio.options.baseUrl,
+      );
+    } on Exception {
+      final posts = await _getPostsFromHtml(tags: tags, page: page);
+      _htmlOnly = true;
+
+      return posts;
+    }
+  }
+
+  Future<List<PostDto>> _getPostsFromHtml({
+    List<String>? tags,
+    int? page,
+  }) async {
+    final query = tags?.join(' ').trim() ?? '';
+    final path = query.isEmpty
+        ? '/post/list/${page ?? 1}'
+        : '/post/list/${Uri.encodeComponent(query)}/${page ?? 1}';
+
     final response = await _dio.get(
-      '/api/danbooru/find_posts',
-      queryParameters: {
-        if (!isEmpty) 'tags': tags?.join(' '),
-        'page': ?page,
-        'limit': ?limit,
-        ..._authParams,
-      },
+      path,
+      options: Options(
+        headers: _authHeaders,
+        responseType: ResponseType.plain,
+      ),
     );
 
-    return _parsePosts(
-      response,
-      baseUrl: _dio.options.baseUrl,
-    );
+    final baseUrl = _dio.options.baseUrl;
+    final cleanBaseUrl = baseUrl.endsWith('/')
+        ? baseUrl.substring(0, baseUrl.length - 1)
+        : baseUrl;
+
+    final document = html_parser.parse(response.data);
+    final thumbs = document.querySelectorAll('a.shm-thumb');
+
+    final posts = <PostDto>[];
+
+    for (final thumb in thumbs) {
+      final id = int.tryParse(thumb.attributes['data-post-id'] ?? '');
+      if (id == null) continue;
+
+      final img = thumb.querySelector('img');
+      final thumbSrc = img?.attributes['src'] ?? '';
+      final hashMatch = RegExp(
+        r'/_thumbs/([a-f0-9]{32})/',
+      ).firstMatch(thumbSrc);
+      final hash = hashMatch?.group(1);
+      if (hash == null) continue;
+
+      final mime = thumb.attributes['data-mime'] ?? 'image/jpeg';
+      final ext = switch (mime) {
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/gif' => 'gif',
+        'image/webp' => 'webp',
+        'video/webm' => 'webm',
+        'video/mp4' => 'mp4',
+        'application/x-shockwave-flash' => 'swf',
+        _ => 'jpg',
+      };
+
+      posts.add(
+        PostDto(
+          id: id,
+          md5: hash,
+          fileUrl: '$cleanBaseUrl/_images/$hash/$id.$ext',
+          previewUrl: '$cleanBaseUrl/_thumbs/$hash/thumb.jpg',
+          height: int.tryParse(thumb.attributes['data-height'] ?? ''),
+          width: int.tryParse(thumb.attributes['data-width'] ?? ''),
+          tags: thumb.attributes['data-tags']
+              ?.split(' ')
+              .where((e) => e.isNotEmpty)
+              .toList(),
+          ext: ext,
+          mime: mime,
+        ),
+      );
+    }
+
+    return posts;
   }
 
   Future<List<AutocompleteDto>> getAutocomplete({
