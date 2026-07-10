@@ -1,7 +1,8 @@
 enum FilterOperator {
   none,
   not,
-  or;
+  or
+  ;
 
   factory FilterOperator.fromString(String value) => switch (value) {
     '-' => not,

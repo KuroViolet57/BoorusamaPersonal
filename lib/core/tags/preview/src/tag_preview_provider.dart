@@ -16,12 +16,6 @@ enum TagPreviewFilterMode {
     TagPreviewFilterMode.animated => TagPreviewFilterMode.video,
     TagPreviewFilterMode.video => TagPreviewFilterMode.off,
   };
-
-  String? get extraTag => switch (this) {
-    TagPreviewFilterMode.off => null,
-    TagPreviewFilterMode.animated => 'animated',
-    TagPreviewFilterMode.video => 'video',
-  };
 }
 
 class TagPreviewState extends Equatable {
@@ -36,11 +30,6 @@ class TagPreviewState extends Equatable {
   final int configId;
   final TagPreviewFilterMode filterMode;
   final bool minimized;
-
-  String get effectiveQuery => switch (filterMode.extraTag) {
-    final extra? => '$tag $extra',
-    null => tag,
-  };
 
   TagPreviewState copyWith({
     String? tag,

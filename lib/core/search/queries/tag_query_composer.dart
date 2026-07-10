@@ -1,6 +1,7 @@
 // Project imports:
 import '../../configs/config/types.dart';
 import '../../posts/rating/types.dart';
+import 'or_operator.dart';
 
 abstract class TagQueryComposer {
   List<String> compose(List<String> tags);
@@ -34,7 +35,7 @@ class DefaultTagQueryComposer implements TagQueryComposer {
       ...?ratingTagsFilter,
     };
 
-    return data.toList();
+    return expandOrGroups(data.toList(), config.booruType);
   }
 }
 

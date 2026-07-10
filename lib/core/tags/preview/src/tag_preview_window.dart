@@ -18,6 +18,7 @@ import '../../../configs/config/types.dart';
 import '../../../configs/manage/providers.dart';
 import '../../../search/search/routes.dart';
 import '../../../search_tabs/providers.dart';
+import 'preview_filter_queries.dart';
 import 'tag_preview_grid.dart';
 import 'tag_preview_provider.dart';
 
@@ -239,6 +240,14 @@ class TagPreviewWindow extends ConsumerWidget {
     final configs = ref.watch(booruConfigProvider);
     final config = configs.firstWhereOrNull((e) => e.id == state.configId);
 
+    final effectiveQuery = config != null
+        ? previewQueryFor(
+            tag: state.tag,
+            mode: state.filterMode,
+            booruType: config.auth.booruType,
+          )
+        : state.tag;
+
     return Material(
       elevation: 12,
       borderRadius: BorderRadius.circular(12),
@@ -252,6 +261,7 @@ class TagPreviewWindow extends ConsumerWidget {
             _WindowHeader(
               state: state,
               config: config,
+              effectiveQuery: effectiveQuery,
               onDrag: onDrag,
               onDragEnd: onDragEnd,
             ),
@@ -276,10 +286,10 @@ class TagPreviewWindow extends ConsumerWidget {
                         Positioned.fill(
                           child: TagPreviewGrid(
                             key: ValueKey(
-                              (state.configId, state.effectiveQuery),
+                              (state.configId, effectiveQuery),
                             ),
                             config: config,
-                            query: state.effectiveQuery,
+                            query: effectiveQuery,
                           ),
                         ),
                         Positioned(
@@ -313,12 +323,14 @@ class _WindowHeader extends ConsumerWidget {
   const _WindowHeader({
     required this.state,
     required this.config,
+    required this.effectiveQuery,
     required this.onDrag,
     required this.onDragEnd,
   });
 
   final TagPreviewState state;
   final BooruConfig? config;
+  final String effectiveQuery;
   final void Function(Offset delta) onDrag;
   final VoidCallback onDragEnd;
 
@@ -345,7 +357,7 @@ class _WindowHeader extends ConsumerWidget {
             const SizedBox(width: 6),
             Expanded(
               child: Text(
-                state.effectiveQuery,
+                effectiveQuery,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -363,7 +375,7 @@ class _WindowHeader extends ConsumerWidget {
                 ref
                     .read(searchTabsProvider.notifier)
                     .add(
-                      query: state.effectiveQuery,
+                      query: effectiveQuery,
                       configId: config.id,
                       activate: false,
                     );
@@ -381,7 +393,7 @@ class _WindowHeader extends ConsumerWidget {
                   ref.read(currentBooruConfigProvider.notifier).update(config);
                 }
 
-                goToSearchPage(ref, tag: state.effectiveQuery);
+                goToSearchPage(ref, tag: effectiveQuery);
               },
             ),
             _HeaderIconButton(
